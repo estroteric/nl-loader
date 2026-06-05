@@ -40,6 +40,8 @@
   let launchPending = $state(false);
   let progress = $state(0);
   let themeVariables = $state('');
+  let username = $state('Placeholder');
+  let avatar = $state<number[]>([]);
   let launchTimer: number | undefined;
   let closeTimer: number | undefined;
 
@@ -117,6 +119,8 @@
     void loadTheme();
     void loadSettings();
     void loadGitMetadata();
+    void getUsername();
+    void getAvatar();
 
     const bootTimer = window.setTimeout(() => {
       showLauncher();
@@ -182,6 +186,24 @@
         nightlies: []
       };
       selectedVersion = 'Unavailable';
+    }
+  }
+
+  async function getUsername() {
+    try {
+      const name = await invoke<string>('get_username');
+      username = name;
+    } catch (error) {
+      console.warn('Failed to get username, first time running?');
+    }
+  }
+
+  async function getAvatar() {
+    try {
+      const bytes = await invoke<number[]>('get_avatar');
+      avatar = bytes;
+    } catch (error) {
+      console.warn('Failed to get avatar, first time running?');
     }
   }
 
@@ -488,8 +510,13 @@
       </nav>
 
       <div class="profile">
-        <div class="avatar"></div>
-        <span>Placeholder</span>
+        {#if avatar.length}
+          <!-- funny implementation but it works -->
+          <div class="avatar" style={`background-image: url('data:image/png;base64,${btoa(avatar.map(b => String.fromCodePoint(b)).join(""))}'); background-size: 100%;`}></div>
+        {:else}
+          <div class="avatar"></div>
+        {/if}
+        <span>{username}</span>
       </div>
 
       <div class="window-controls" data-no-drag>

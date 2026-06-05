@@ -177,6 +177,28 @@ fn load_launcher_theme() -> Result<LauncherTheme, String> {
 }
 
 #[tauri::command]
+fn get_username() -> Result<String, String> {
+    let cloud = nl_cloud_path()?;
+    let state_path = cloud.join("state.json");
+    let state_text = fs::read_to_string(&state_path)
+        .map_err(|error| format!("failed to read {}: {error}", state_path.display()))?;
+    let state: CloudState = serde_json::from_str(&state_text)
+        .map_err(|error| format!("failed to parse {}: {error}", state_path.display()))?;
+
+    Ok(state.username)
+}
+
+#[tauri::command]
+fn get_avatar() -> Result<Vec<u8>, String> {
+    let cloud = nl_cloud_path()?;
+    let avatar_path = cloud.join("avatar.png");
+    let bytes = fs::read(&avatar_path)
+        .map_err(|error| format!("failed to read {}: {error}", avatar_path.display()))?;
+
+    Ok(bytes)
+}
+
+#[tauri::command]
 fn minimize_main_window(app: AppHandle) -> Result<(), String> {
     let window = app
         .get_webview_window("main")
@@ -829,6 +851,8 @@ pub fn run() {
             minimize_main_window,
             close_main_window,
             kill_background_processes,
+            get_username,
+            get_avatar,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
